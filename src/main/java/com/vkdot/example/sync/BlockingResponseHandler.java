@@ -31,6 +31,7 @@ public class BlockingResponseHandler implements ResponseHandler {
 
 	@Override
 	public void handle(Response resp) {
+		// check if no response has beed received yet
 		if (receivedResponse.compareAndSet(null, resp)) {
 			synchronized (responseLock) {
 				responseLock.notifyAll();
@@ -46,16 +47,13 @@ public class BlockingResponseHandler implements ResponseHandler {
 	 * @return A response message
 	 */
 	public Response waitForResponse() {
+		// loop until we receive a response
 		while (receivedResponse.get() == null) {
 			synchronized (responseLock) {
 				try {
 					responseLock.wait();
 				} catch (InterruptedException e) {
 					throw new IllegalStateException("Failed to wait for a response", e);
-				}
-				Response resp = receivedResponse.get();
-				if (resp != null) {
-					return resp;
 				}
 			}
 		}
